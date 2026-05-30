@@ -172,9 +172,10 @@ export function SettingsView() {
 
         <section className="settings-section">
           <h2 className="settings-heading">Data</h2>
-          <InfoRow label="ICD-10-CM Version" value="FY 2026" />
-          <InfoRow label="Billable Codes" value="74,714" />
-          <InfoRow label="Source" value="CDC / NCHS (public domain)" />
+          <InfoRow label="LOINC Version" value="2.82" />
+          <InfoRow label="Released" value="Feb 23, 2026" />
+          <InfoRow label="Active Codes" value="97,314" />
+          <InfoRow label="Source" value="Regenstrief Institute" />
         </section>
 
         <section className="settings-section">
@@ -187,9 +188,24 @@ export function SettingsView() {
           </div>
           {flash && <p className="settings-hint">{flash}</p>}
           <p className="settings-disclaimer">
-            LOINC Snap is a reference tool. Always verify codes against official
-            CDC / NCHS sources before billing or clinical documentation. No
-            data leaves your computer except license activation.
+            LOINC Snap is a reference tool. Always verify codes against your
+            lab information system, EHR, or billing system before clinical or
+            financial use. No data leaves your computer except license
+            activation.
+          </p>
+          <p className="settings-disclaimer">
+            This material contains content from LOINC (http://loinc.org).
+            LOINC is copyright © Regenstrief Institute, Inc. and the Logical
+            Observation Identifiers Names and Codes (LOINC) Committee and is
+            available at no cost under the license at http://loinc.org/license.
+            LOINC® is a registered United States trademark of Regenstrief
+            Institute, Inc.
+          </p>
+          <p className="settings-disclaimer">
+            UCUM codes and definitions are copyright © 1995–2026 Regenstrief
+            Institute, Inc. and the Unified Codes for Units of Measures
+            Organization. Available at http://unitsofmeasure.org. Provided
+            "AS IS" with no warranties.
           </p>
         </section>
       </div>

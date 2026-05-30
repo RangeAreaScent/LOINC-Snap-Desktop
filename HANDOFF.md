@@ -6,26 +6,36 @@
 - **Wave:** 2
 - **Stage:** 1 scaffold
 - **Last updated:** 2026-05-30
-- **Repo:** none yet (will be `https://github.com/RangeAreaScent/LOINC-Snap-Desktop` per playbook §4 naming)
+- **Repo:** https://github.com/RangeAreaScent/LOINC-Snap-Desktop (public, created 2026-05-30)
 - **Latest release:** none
-- **Latest CI:** n/a (no repo yet)
+- **Latest CI:** not yet triggered (workflow runs on `v*` tag push)
 - **Bundle id:** com.ryan.loincsnap
 - **Dataset:** LOINC v2.82 (License v5.8), Group 1 Artifacts only. 109,325 codes (97,314 ACTIVE). `loinc.sqlite` (50.0 MB) dropped at `src-tauri/resources/loinc.sqlite`. License: ok (Regenstrief perpetual + free + commercial, attribution required per `../LOINC-Snap/SPEC.md` §9).
 - **Deviations from playbook:** Folder named `LOINC-Snap_Mac_Win_app` (hyphen) instead of playbook §4 convention `LOINC Snap_Mac_Win_app` (space). User decision 2026-05-29 to keep as-is. No functional impact.
 - **Active blockers:**
   - **Mac build not yet verified.** Project was scaffolded by copying ICD desktop and renaming (same option B as iOS). String substitution clean (grep verifies 0 `icdsnap`/`icd-snap`/`ICD Snap` left). Rust query layer (`loinc.rs`) rewritten for LOINC schema with the same 4-signal ranker as iOS (`SPEC.md` §7a). React frontend strings (App, settings, components) NOT yet domain-swapped — that's desktop Part 2.
-  - **`LOINC Snap_Win/` subfolder is a separate full project copy** (Windows-specific build setup). Currently it carries through the same string substitutions but still ships ICD's `icd.rs` + ICD sqlite content unless treated separately. Either keep in sync manually, or restructure to share `src-tauri/` with the Mac side (deferred to a Windows session).
-  - GitHub repo not yet created, Apple/Windows codesign certs still series-wide blockers.
+  - **`LOINC Snap_Win/` subfolder is git-ignored** (per `.gitignore` `LOINC Snap_Win/`). It carried through the same string substitutions during the fork but is no longer tracked. If a Windows-specific build setup is needed later, either restructure to share `src-tauri/` or re-introduce as a tracked subfolder with its own sqlite + loinc.rs parity.
+  - Apple/Windows codesign certs still series-wide blockers (per SNAP_SERIES_STATUS).
 - **Next 3 steps:**
-  1. **`pnpm install && pnpm tauri dev`** (or `npm`/`cargo`) — first build verification. Rust will need a fresh `Cargo.lock`; expect a few `unused field` warnings on the compat shims in `loinc.rs` (is_billable, chapter_number, etc.) — those are intentional.
+  1. **`pnpm install && pnpm tauri dev`** (or `npm`/`cargo`) locally on Mac — first build verification. Rust will need a fresh `Cargo.lock`; expect a few `unused field` warnings on the compat shims in `loinc.rs` (chapter_number, block_code, etc.) — intentional.
   2. **Desktop Part 2 — React UI swap.** Mirror iOS Part 2: Settings "Data" section labels, About copy with LOINC §10 + UCUM attribution, search placeholder + tips (HbA1c/CBC/BUN, 2160-0/4548-4/6690-2), 6-axis breakdown panel in detail view, status badge (ACTIVE/TRIAL/DEPRECATED), CollectionExporter headers + filename, app icon swap.
-  3. **Create the `LOINC-Snap-Desktop` GitHub repo, push `main`, run CI.** Once Lemon Squeezy + Apple cert + Windows codesign cert clear, do the v1.0.0-beta.1 tag flow.
-- **Report-back trigger:** first successful Mac/Windows build, first commit on `main`, repo creation, any `v*` tag, any new blocker, any SPEC change
+  3. **First release tag** — once Part 2 done + local Mac build verified: push tag `v1.0.0-beta.1`, GH Actions builds Windows artifact (unsigned until cert clears), upload Mac DMG via the standard `snap-release-mac` helper.
+- **Report-back trigger:** first successful Mac/Windows build, first `v*` tag pushed, GH Actions success, any new blocker, any SPEC change
 <!-- snap-series:manager-block:end -->
 
 ---
 
 ## Body
+
+### GitHub repo created (2026-05-30)
+
+- **Repo**: https://github.com/RangeAreaScent/LOINC-Snap-Desktop (public)
+- **Branch**: `main` (initial commit `a18e6b8` — 103 files)
+- **CI**: `.github/workflows/build.yml` adapted from ICD — triggers on
+  `v*` tag, builds Windows artifact + creates draft release.
+- **`.gitignore`**: adapted from ICD — ignores `node_modules`, `dist`,
+  `target`, `Cargo.lock`, macOS metadata, and the `LOINC Snap_Win/`
+  subfolder (kept out of the repo per ICD's convention).
 
 ### Stage 1 state (2026-05-30)
 

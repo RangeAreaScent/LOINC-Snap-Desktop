@@ -266,13 +266,10 @@ function CollectionDetail({
             <div className="code-row__main">
               <div className="code-row__top">
                 <span className="code-row__code">{item.code}</span>
-                {item.isBillable ? (
-                  <span className="badge badge--billable">Billable</span>
-                ) : (
-                  <span className="badge badge--nonbillable">
-                    Non-billable
-                  </span>
-                )}
+                {/* No status badge on collection rows — STATUS isn't
+                    snapshotted on CollectionItem and fetching it per row
+                    on a long list would be wasteful. The detail view
+                    shows the badge. */}
               </div>
               <div className="code-row__desc">{item.description}</div>
             </div>

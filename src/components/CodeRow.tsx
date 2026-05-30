@@ -31,11 +31,7 @@ export function CodeRow({
       <div className="code-row__main">
         <div className="code-row__top">
           <span className="code-row__code">{item.code}</span>
-          {item.isBillable ? (
-            <span className="badge badge--billable">Billable</span>
-          ) : (
-            <span className="badge badge--nonbillable">Non-billable</span>
-          )}
+          <StatusBadge status={item.status} />
         </div>
         <div className="code-row__desc">{item.description}</div>
         {item.chapterDescription && (
@@ -54,4 +50,24 @@ export function CodeRow({
       </button>
     </div>
   );
+}
+
+/// Reuses the existing `badge` classes from the ICD template:
+///   .badge--billable    → green   (we map to ACTIVE)
+///   .badge--nonbillable → orange  (we map to DEPRECATED / DISCOURAGED)
+/// TRIAL gets the green pill too for now — no CSS class change required.
+/// Falls back to nothing when the status is missing (defensive).
+function StatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "ACTIVE":
+      return <span className="badge badge--billable">Active</span>;
+    case "TRIAL":
+      return <span className="badge badge--billable">Trial</span>;
+    case "DEPRECATED":
+      return <span className="badge badge--nonbillable">Deprecated</span>;
+    case "DISCOURAGED":
+      return <span className="badge badge--nonbillable">Discouraged</span>;
+    default:
+      return null;
+  }
 }

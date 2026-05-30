@@ -62,7 +62,7 @@ export function SearchView({ selectedCode, onSelect }: Props) {
         <input
           ref={inputRef}
           className="search-bar__input"
-          placeholder="Search diagnosis or code…"
+          placeholder="Search lab test or LOINC code…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           spellCheck={false}
@@ -83,15 +83,15 @@ export function SearchView({ selectedCode, onSelect }: Props) {
         {error && <div className="state-msg state-msg--error">{error}</div>}
         {!error && !trimmed && (
           <div className="state-msg">
-            <p className="state-msg__title">Search ICD-10-CM codes</p>
-            <p>Type a diagnosis (e.g. "hypertension") or a code (e.g. "I10").</p>
-            <p>Abbreviations work too — try "HTN", "T2DM", "COPD".</p>
+            <p className="state-msg__title">Search LOINC</p>
+            <p>Type a lab test (e.g. "creatinine") or a code (e.g. "2160-0").</p>
+            <p>Abbreviations work too — try "HbA1c", "CBC", "BUN".</p>
           </div>
         )}
         {!error && trimmed && !loading && results.length === 0 && (
           <div className="state-msg">
             <p className="state-msg__title">No results</p>
-            <p>No billable codes match "{trimmed}".</p>
+            <p>No LOINC codes match "{trimmed}".</p>
           </div>
         )}
         {results.map((item) => (

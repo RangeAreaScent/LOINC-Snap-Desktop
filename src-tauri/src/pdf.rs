@@ -199,7 +199,7 @@ pub fn export(path: &str, title: &str, entries: &[ExportEntry]) -> Result<(), St
     layout.text(title, 18.0, 0.0, true);
     layout.gap(1.5);
     layout.text(
-        &format!("{} codes  -  ICD-10-CM FY 2026", entries.len()),
+        &format!("{} codes  -  LOINC v2.82", entries.len()),
         9.0,
         0.0,
         false,
@@ -212,19 +212,30 @@ pub fn export(path: &str, title: &str, entries: &[ExportEntry]) -> Result<(), St
         if !e.note.trim().is_empty() {
             layout.text(&format!("Note: {}", e.note), 9.5, 5.0, false);
         }
-        let mut meta = format!("Billable: {}", e.billable);
+        // `billable` carries LOINC STATUS (ACTIVE/TRIAL/DEPRECATED/...) per
+        // the React export.ts mapping. `chapter` → CLASS, `block` → SYSTEM.
+        let mut meta = format!("Status: {}", if e.billable.is_empty() { "—" } else { &e.billable });
         if !e.chapter.is_empty() {
-            meta.push_str(&format!("   |   Chapter: {}", e.chapter));
+            meta.push_str(&format!("   |   Class: {}", e.chapter));
         }
         if !e.block.is_empty() {
-            meta.push_str(&format!("   |   Block: {}", e.block));
-        }
-        if !e.category.is_empty() {
-            meta.push_str(&format!("   |   Category: {}", e.category));
+            meta.push_str(&format!("   |   System: {}", e.block));
         }
         layout.text(&meta, 8.5, 5.0, false);
         layout.gap(4.5);
     }
+
+    // LOINC §10 attribution footer — required for every shipped product
+    // that incorporates LOINC content.
+    layout.gap(4.0);
+    layout.text(
+        "This material contains content from LOINC (http://loinc.org). \
+         LOINC is copyright (c) Regenstrief Institute, Inc. and the LOINC \
+         Committee, available at no cost under the license at \
+         http://loinc.org/license. LOINC(R) is a registered U.S. trademark \
+         of Regenstrief Institute, Inc.",
+        7.5, 0.0, false,
+    );
 
     let pages = layout.finish();
     let bytes = doc
@@ -241,14 +252,15 @@ mod tests {
     fn entry(code: &str, note: &str) -> ExportEntry {
         ExportEntry {
             code: code.into(),
-            description: "Essential (primary) hypertension with a fairly long \
-                description so word wrapping and page flow are exercised"
+            description: "Creatinine [Mass/volume] in Serum or Plasma with a \
+                fairly long description so word wrapping and page flow are \
+                exercised"
                 .into(),
             note: note.into(),
-            billable: "Yes".into(),
-            chapter: "Diseases of the circulatory system".into(),
-            block: "Hypertensive diseases".into(),
-            category: "Essential (primary) hypertension".into(),
+            billable: "ACTIVE".into(),
+            chapter: "CHEM".into(),
+            block: "Ser/Plas".into(),
+            category: String::new(),
         }
     }
 
@@ -257,7 +269,7 @@ mod tests {
         let path = std::env::temp_dir().join("loincsnap_pdf_ascii.pdf");
         let path = path.to_str().unwrap();
         let entries: Vec<ExportEntry> = (0..40)
-            .map(|i| entry(&format!("I{i:02}"), if i % 3 == 0 { "Check coverage" } else { "" }))
+            .map(|i| entry(&format!("{i}-0"), if i % 3 == 0 { "Check reference range" } else { "" }))
             .collect();
         export(path, "Test Collection", &entries).expect("export should succeed");
 
@@ -270,8 +282,8 @@ mod tests {
     fn produces_a_small_korean_pdf() {
         let path = std::env::temp_dir().join("loincsnap_pdf_korean.pdf");
         let path = path.to_str().unwrap();
-        let entries = vec![entry("I10", "환자 본태성 고혈압 — 보험 확인 필요")];
-        export(path, "고혈압 모음", &entries).expect("korean export should succeed");
+        let entries = vec![entry("2160-0", "환자 크레아티닌 — 신장 기능 모니터링")];
+        export(path, "신장 패널 모음", &entries).expect("korean export should succeed");
 
         let bytes = std::fs::read(path).expect("output file should exist");
         assert_eq!(&bytes[..5], b"%PDF-", "missing PDF header");

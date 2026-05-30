@@ -45,7 +45,7 @@ export function AddCodeModal({ collectionId, onClose }: Props) {
       <input
         className="text-input"
         autoFocus
-        placeholder="Search diagnosis or code…"
+        placeholder="Search lab test or LOINC code…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         spellCheck={false}

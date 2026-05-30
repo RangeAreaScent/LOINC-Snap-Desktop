@@ -7,15 +7,23 @@ interface ExportEntry {
   code: string;
   description: string;
   note: string;
+  /// Kept for the Rust `ExportEntry` deserializer (same struct on both
+  /// sides). Maps to LOINC STATUS — populated with the status string
+  /// (ACTIVE/TRIAL/DEPRECATED/DISCOURAGED) rather than the Yes/No that
+  /// the ICD template used.
   billable: string;
+  /// Mapped to LOINC CLASS (e.g. "CHEM").
   chapter: string;
+  /// Mapped to LOINC SYSTEM (e.g. "Ser/Plas").
   block: string;
+  /// Unused for LOINC (no category concept). Kept empty for struct
+  /// compatibility with the Rust ExportEntry — drop in a future cleanup.
   category: string;
 }
 
-/** Enriches collection items with full CDC classification + the saved note.
- *  Block/category aren't stored on the collection item, so they're fetched
- *  fresh from the database at export time. */
+/** Enriches collection items with full LOINC info + the saved note. The
+ *  axis fields (system) and status aren't stored on the collection item,
+ *  so they're fetched fresh from the database at export time. */
 async function buildEntries(
   c: Collection,
   notes: NoteMap,
@@ -29,10 +37,10 @@ async function buildEntries(
       code: item.code,
       description: d?.description ?? item.description,
       note: notes[item.code]?.text ?? "",
-      billable: (d?.isBillable ?? item.isBillable) ? "Yes" : "No",
+      billable: d?.status ?? "",
       chapter: d?.chapterDescription ?? item.chapterDescription,
       block: d?.blockDescription ?? "",
-      category: d?.categoryDescription ?? "",
+      category: "",
     };
   });
 }
@@ -43,13 +51,12 @@ function csvCell(value: string): string {
 }
 
 const CSV_HEADER = [
-  "Code",
-  "Description",
+  "LOINC",
+  "Long Common Name",
   "Note",
-  "Billable",
-  "Chapter",
-  "Block",
-  "Category",
+  "Status",
+  "Class",
+  "System",
 ];
 
 /** Opens a native save dialog and writes the collection as CSV.
@@ -71,10 +78,9 @@ export async function exportCollectionCSV(
       e.code,
       e.description,
       e.note,
-      e.billable,
-      e.chapter,
-      e.block,
-      e.category,
+      e.billable, // = LOINC STATUS
+      e.chapter,  // = LOINC CLASS
+      e.block,    // = LOINC SYSTEM
     ]),
   ];
   const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");

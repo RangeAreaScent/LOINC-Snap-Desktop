@@ -80,17 +80,24 @@ export function CodeDetailView({ code }: Props) {
     isBillable: detail.isBillable,
     chapterDescription: detail.chapterDescription,
     blockDescription: detail.blockDescription,
+    status: detail.status,
   };
 
   const note = notes[detail.code];
   const fullDetail = [
     detail.code,
     detail.description,
+    detail.shortName && `Short name: ${detail.shortName}`,
     note?.text && `Note: ${note.text}`,
-    detail.isBillable ? "Billable" : "Non-billable",
-    detail.chapterDescription && `Chapter: ${detail.chapterDescription}`,
-    detail.blockDescription && `Block: ${detail.blockDescription}`,
-    detail.categoryDescription && `Category: ${detail.categoryDescription}`,
+    `Status: ${detail.status || "—"}`,
+    detail.exampleUcumUnits && `Units: ${detail.exampleUcumUnits}`,
+    detail.chapterDescription && `Class: ${detail.chapterDescription}`,
+    detail.component && `Component: ${detail.component}`,
+    detail.property && `Property: ${detail.property}`,
+    detail.timeAspect && `Time: ${detail.timeAspect}`,
+    detail.blockDescription && `System: ${detail.blockDescription}`,
+    detail.scaleType && `Scale: ${detail.scaleType}`,
+    detail.methodType && `Method: ${detail.methodType}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -119,13 +126,14 @@ export function CodeDetailView({ code }: Props) {
           </div>
           <div className="detail-hero__code">{detail.code}</div>
           <div className="detail-hero__desc">{detail.description}</div>
-          <span
-            className={`badge ${
-              detail.isBillable ? "badge--billable" : "badge--nonbillable"
-            }`}
-          >
-            {detail.isBillable ? "Billable" : "Non-billable"}
-          </span>
+          <div className="detail-hero__meta">
+            <DetailStatusBadge status={detail.status} />
+            {detail.exampleUcumUnits && (
+              <span className="badge badge--info">
+                Units: {detail.exampleUcumUnits}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="copy-group">
@@ -156,15 +164,43 @@ export function CodeDetailView({ code }: Props) {
         </div>
 
         <div className="classification">
-          <h3 className="classification__heading">Classification (CDC)</h3>
+          <h3 className="classification__heading">6-axis breakdown</h3>
+          <AxisRow
+            label="Component"
+            value={detail.component}
+            hint="what is measured"
+          />
+          <AxisRow
+            label="Property"
+            value={detail.property}
+            expanded={AXIS_PROPERTY[detail.property]}
+            hint="how expressed"
+          />
+          <AxisRow
+            label="Time"
+            value={detail.timeAspect}
+            expanded={AXIS_TIME[detail.timeAspect]}
+            hint="when measured"
+          />
+          <AxisRow
+            label="System"
+            value={detail.blockDescription}
+            expanded={AXIS_SYSTEM[detail.blockDescription]}
+            hint="specimen / source"
+          />
+          <AxisRow
+            label="Scale"
+            value={detail.scaleType}
+            expanded={AXIS_SCALE[detail.scaleType]}
+            hint="quantitative / qualitative"
+          />
+          <AxisRow
+            label="Method"
+            value={detail.methodType || "—"}
+            hint="measurement method"
+          />
           {detail.chapterDescription && (
-            <ClassRow label="Chapter" value={detail.chapterDescription} />
-          )}
-          {detail.blockDescription && (
-            <ClassRow label="Block" value={detail.blockDescription} />
-          )}
-          {detail.categoryDescription && (
-            <ClassRow label="Category" value={detail.categoryDescription} />
+            <ClassRow label="Class" value={detail.chapterDescription} />
           )}
         </div>
 
@@ -191,6 +227,127 @@ function ClassRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/// One row in the 6-axis breakdown. Shows the raw LOINC axis token (e.g.
+/// "MCnc") plus an unwrapped form ("Mass concentration") when known. The
+/// `.class-row` styling is reused — no new CSS required.
+function AxisRow({
+  label,
+  value,
+  expanded,
+  hint,
+}: {
+  label: string;
+  value: string;
+  expanded?: string;
+  hint: string;
+}) {
+  if (!value) return null;
+  const showExpansion = expanded && expanded !== value;
+  return (
+    <div className="class-row">
+      <span className="class-row__label">
+        {label}
+        <span className="class-row__hint"> · {hint}</span>
+      </span>
+      <span className="class-row__value">
+        {showExpansion ? `${value} · ${expanded}` : value}
+      </span>
+    </div>
+  );
+}
+
+function DetailStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "ACTIVE":
+      return <span className="badge badge--billable">Active</span>;
+    case "TRIAL":
+      return <span className="badge badge--billable">Trial</span>;
+    case "DEPRECATED":
+      return <span className="badge badge--nonbillable">Deprecated</span>;
+    case "DISCOURAGED":
+      return <span className="badge badge--nonbillable">Discouraged</span>;
+    default:
+      return null;
+  }
+}
+
+// LOINC axis-value unwrappers. Same dictionary as iOS `LOINCAbbreviations`,
+// kept in lockstep manually. (Not exhaustive — covers the common cases the
+// detail view will hit; unrecognized tokens display verbatim.)
+const AXIS_PROPERTY: Record<string, string> = {
+  MCnc: "Mass concentration",
+  SCnc: "Substance concentration",
+  CCnc: "Catalytic concentration",
+  NCnc: "Number concentration",
+  ACnc: "Arbitrary concentration",
+  MFr: "Mass fraction",
+  SFr: "Substance fraction",
+  NFr: "Number fraction",
+  VFr: "Volume fraction",
+  Prid: "Presence or identity",
+  Type: "Type",
+  Titr: "Titer",
+  Ratio: "Ratio",
+  Vol: "Volume",
+  Time: "Time",
+  Temp: "Temperature",
+  Pres: "Pressure",
+  Len: "Length",
+  Find: "Finding",
+  Imp: "Impression",
+  Anat: "Anatomic site",
+  Cnt: "Count",
+};
+
+const AXIS_TIME: Record<string, string> = {
+  Pt: "Point in time",
+  "1H": "1-hour collection",
+  "2H": "2-hour collection",
+  "4H": "4-hour collection",
+  "6H": "6-hour collection",
+  "8H": "8-hour collection",
+  "12H": "12-hour collection",
+  "24H": "24-hour collection",
+  "1Wk": "1-week collection",
+  "1M": "1-month collection",
+};
+
+const AXIS_SCALE: Record<string, string> = {
+  Qn: "Quantitative",
+  Ord: "Ordinal",
+  Nom: "Nominal",
+  Nar: "Narrative",
+  Doc: "Document",
+  Set: "Set",
+  OrdQn: "Ordinal or quantitative",
+  Multi: "Multiple",
+};
+
+const AXIS_SYSTEM: Record<string, string> = {
+  Ser: "Serum",
+  Plas: "Plasma",
+  "Ser/Plas": "Serum or plasma",
+  Bld: "Blood",
+  BldA: "Arterial blood",
+  BldV: "Venous blood",
+  BldC: "Capillary blood",
+  Ur: "Urine",
+  CSF: "Cerebrospinal fluid",
+  Stl: "Stool",
+  Saliva: "Saliva",
+  Sweat: "Sweat",
+  Smn: "Semen",
+  "Synv fld": "Synovial fluid",
+  "Periton fld": "Peritoneal fluid",
+  "Plr fld": "Pleural fluid",
+  "Amnio fld": "Amniotic fluid",
+  Tiss: "Tissue",
+  Bone: "Bone",
+  Hair: "Hair",
+  Nail: "Nail",
+  "^Patient": "Patient",
+};
 
 function NoteSection({ code }: { code: string }) {
   const { notes, setNote, deleteNote } = useAppData();
