@@ -257,7 +257,7 @@ function AxisRow({
   );
 }
 
-function DetailStatusBadge({ status }: { status: string }) {
+function DetailStatusBadge({ status }: { status: string | undefined }) {
   switch (status) {
     case "ACTIVE":
       return <span className="badge badge--billable">Active</span>;

@@ -11,7 +11,11 @@ export interface SearchResult {
   isBillable: boolean;
   chapterDescription: string;
   blockDescription: string;
-  status: string;
+  /// Optional — Rust populates this for live search/detail rows, but
+  /// rows reconstructed from a local Favorite/CollectionItem snapshot
+  /// won't have it (status isn't snapshotted). `StatusBadge` no-ops
+  /// when undefined.
+  status?: string;
 }
 
 export interface CodeDetail {

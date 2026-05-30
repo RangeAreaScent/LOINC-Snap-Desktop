@@ -57,7 +57,7 @@ export function CodeRow({
 ///   .badge--nonbillable → orange  (we map to DEPRECATED / DISCOURAGED)
 /// TRIAL gets the green pill too for now — no CSS class change required.
 /// Falls back to nothing when the status is missing (defensive).
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string | undefined }) {
   switch (status) {
     case "ACTIVE":
       return <span className="badge badge--billable">Active</span>;
