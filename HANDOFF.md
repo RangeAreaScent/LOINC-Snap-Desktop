@@ -7,20 +7,20 @@
 - **Stage:** 2 features
 - **Last updated:** 2026-05-30
 - **Repo:** https://github.com/RangeAreaScent/LOINC-Snap-Desktop (public, created 2026-05-30)
-- **Latest release:** none
-- **Latest CI:** not yet triggered (workflow runs on `v*` tag push)
+- **Latest release:** [v1.0.0-beta.1](https://github.com/RangeAreaScent/LOINC-Snap-Desktop/releases/tag/v1.0.0-beta.1) (2026-05-30, prerelease) — Mac arm64 DMG + Win x64 NSIS+MSI, all unsigned
+- **Latest CI:** ✅ success — [run #26697461908](https://github.com/RangeAreaScent/LOINC-Snap-Desktop/actions/runs/26697461908) on commit `c408673`
 - **Bundle id:** com.ryan.loincsnap
 - **Dataset:** LOINC v2.82 (License v5.8), Group 1 Artifacts only. 109,325 codes (97,314 ACTIVE). `loinc.sqlite` (50.0 MB) dropped at `src-tauri/resources/loinc.sqlite`. License: ok (Regenstrief perpetual + free + commercial, attribution required per `../LOINC-Snap/SPEC.md` §9).
 - **Deviations from playbook:** Folder named `LOINC-Snap_Mac_Win_app` (hyphen) instead of playbook §4 convention `LOINC Snap_Mac_Win_app` (space). User decision 2026-05-29 to keep as-is. No functional impact.
 - **Active blockers:**
-  - **Mac build not yet verified.** Scaffold + Part 2 done in code; `pnpm tauri dev` hasn't been run yet. Expect a fresh `Cargo.lock` on first build and possibly a few `unused field` warnings on the compat shims in `loinc.rs` (chapter_number, block_code, …) — intentional.
-  - **`LOINC Snap_Win/` subfolder is git-ignored** (per `.gitignore`). It carried through the same string substitutions during the fork but is no longer tracked. If a Windows-specific build setup is needed later, either restructure to share `src-tauri/` or re-introduce as a tracked subfolder.
-  - Apple/Windows codesign certs still series-wide blockers (per SNAP_SERIES_STATUS).
+  - **Beta is unsigned on both platforms** — macOS users see "unidentified developer" (right-click → Open bypass), Windows users see SmartScreen warning ("More info → Run anyway"). Apple Developer + Windows EV cert clearance unblocks v1.0.0 stable.
+  - **Apple Silicon only on Mac** — Intel Mac build (`x86_64`) not produced yet. Add `--target x86_64-apple-darwin` to the local build flow when Intel coverage matters.
+  - **`LOINC Snap_Win/` subfolder is git-ignored** (per `.gitignore`). Not a blocker for the current release; only matters if a Windows-specific build setup is reintroduced.
 - **Next 3 steps:**
-  1. **`pnpm install && pnpm tauri dev`** locally on Mac — first build verification. Confirm search returns LOINC results, status badges render, 6-axis breakdown panel shows on detail view, About section has LOINC + UCUM attribution.
-  2. **PDF export test** — open a collection with a few codes, run Export PDF, verify the PDF header reads "LOINC v2.82" and the footer carries the LOINC §10 attribution paragraph. Eyeball CSV export columns (LOINC / Long Common Name / Note / Status / Class / System).
-  3. **First release tag** — push `v1.0.0-beta.1` to trigger GH Actions Windows build + draft release. Then run the local `snap-release-mac v1.0.0-beta.1` helper to upload the macOS DMG to the same draft. Windows build will be unsigned until cert clears.
-- **Report-back trigger:** first successful Mac/Windows build, first `v*` tag pushed, GH Actions success, any new blocker, any SPEC change
+  1. **Sanity-test the v1.0.0-beta.1 build on a real Mac + Windows machine** — search ranking, 6-axis panel, status badges, PDF export header + LOINC §10 footer, CSV columns. Note any UI roughness for v1.0.0.
+  2. **Apple Developer enrollment + Windows codesign cert procurement** (series-wide blocker). Once cleared: re-tag as `v1.0.0` for the signed stable release.
+  3. **Optional: Intel Mac coverage** — `rustup target add x86_64-apple-darwin` + `cargo tauri build --target x86_64-apple-darwin`, then upload that DMG alongside the arm64 one.
+- **Report-back trigger:** beta feedback, Apple Developer enrollment, codesign certs ready, v1.0.0 stable tag, any new blocker
 <!-- snap-series:manager-block:end -->
 
 ---
@@ -36,6 +36,44 @@
 - **`.gitignore`**: adapted from ICD — ignores `node_modules`, `dist`,
   `target`, `Cargo.lock`, macOS metadata, and the `LOINC Snap_Win/`
   subfolder (kept out of the repo per ICD's convention).
+
+### v1.0.0-beta.1 release (2026-05-30)
+
+First public beta cut today. URL:
+<https://github.com/RangeAreaScent/LOINC-Snap-Desktop/releases/tag/v1.0.0-beta.1>
+
+Assets:
+- `LOINC.Snap_1.0.0_aarch64.dmg` (19 MB, Apple Silicon, **unsigned**)
+- `LOINC.Snap_1.0.0_x64-setup.exe` (Windows NSIS, **unsigned**)
+- `LOINC.Snap_1.0.0_x64_en-US.msi` (Windows MSI, **unsigned**)
+
+Release flow that landed:
+1. **Windows** built via GH Actions on `windows-latest` runner from
+   `.github/workflows/build.yml`. `tauri-action` auto-created the draft
+   release and attached the two Windows artifacts.
+2. **Mac** built locally on the dev Mac (`npm run tauri build`, ~4 min
+   on Apple Silicon with cold Cargo cache). DMG manually uploaded with
+   `gh release upload v1.0.0-beta.1 <dmg>` to the same draft.
+3. Draft flipped to published prerelease via `gh release edit`.
+
+Two issues fixed during the release that future Snap-desktop forks will
+also hit:
+- **TS error**: `SearchResult.status` was required but `FavoritesView`
+  builds a `SearchResult` from a local `Favorite` snapshot that doesn't
+  carry STATUS. Fixed by making `status` optional (`status?: string`)
+  and threading `string | undefined` through both `StatusBadge`
+  variants. Commit `4a31640`.
+- **CI npm ci failure**: `package-lock.json` was excluded from the
+  initial rsync (and never re-added), so `npm ci` on the runner had
+  nothing to install from. Fixed by committing both `package-lock.json`
+  and `src-tauri/Cargo.lock` — binaries genuinely want a pinned Cargo
+  lock for CI/local parity. Commit `c408673`.
+
+Tag had to be moved twice during the fix cycle
+(`git tag -d` → `git push origin :refs/tags/...` → re-create on the
+fixed commit). For future first releases: get a clean local
+`npm run tauri build` first, then commit the lockfiles, *then* push the
+tag — that avoids the tag-shuffle dance.
 
 ### Part 2 polish (2026-05-30, commit `13f5ff0`)
 
