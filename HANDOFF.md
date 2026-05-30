@@ -4,7 +4,7 @@
 - **App:** LOINC Snap
 - **Platform:** desktop
 - **Wave:** 2
-- **Stage:** 1 scaffold
+- **Stage:** 2 features
 - **Last updated:** 2026-05-30
 - **Repo:** https://github.com/RangeAreaScent/LOINC-Snap-Desktop (public, created 2026-05-30)
 - **Latest release:** none
@@ -13,13 +13,13 @@
 - **Dataset:** LOINC v2.82 (License v5.8), Group 1 Artifacts only. 109,325 codes (97,314 ACTIVE). `loinc.sqlite` (50.0 MB) dropped at `src-tauri/resources/loinc.sqlite`. License: ok (Regenstrief perpetual + free + commercial, attribution required per `../LOINC-Snap/SPEC.md` §9).
 - **Deviations from playbook:** Folder named `LOINC-Snap_Mac_Win_app` (hyphen) instead of playbook §4 convention `LOINC Snap_Mac_Win_app` (space). User decision 2026-05-29 to keep as-is. No functional impact.
 - **Active blockers:**
-  - **Mac build not yet verified.** Project was scaffolded by copying ICD desktop and renaming (same option B as iOS). String substitution clean (grep verifies 0 `icdsnap`/`icd-snap`/`ICD Snap` left). Rust query layer (`loinc.rs`) rewritten for LOINC schema with the same 4-signal ranker as iOS (`SPEC.md` §7a). React frontend strings (App, settings, components) NOT yet domain-swapped — that's desktop Part 2.
-  - **`LOINC Snap_Win/` subfolder is git-ignored** (per `.gitignore` `LOINC Snap_Win/`). It carried through the same string substitutions during the fork but is no longer tracked. If a Windows-specific build setup is needed later, either restructure to share `src-tauri/` or re-introduce as a tracked subfolder with its own sqlite + loinc.rs parity.
+  - **Mac build not yet verified.** Scaffold + Part 2 done in code; `pnpm tauri dev` hasn't been run yet. Expect a fresh `Cargo.lock` on first build and possibly a few `unused field` warnings on the compat shims in `loinc.rs` (chapter_number, block_code, …) — intentional.
+  - **`LOINC Snap_Win/` subfolder is git-ignored** (per `.gitignore`). It carried through the same string substitutions during the fork but is no longer tracked. If a Windows-specific build setup is needed later, either restructure to share `src-tauri/` or re-introduce as a tracked subfolder.
   - Apple/Windows codesign certs still series-wide blockers (per SNAP_SERIES_STATUS).
 - **Next 3 steps:**
-  1. **`pnpm install && pnpm tauri dev`** (or `npm`/`cargo`) locally on Mac — first build verification. Rust will need a fresh `Cargo.lock`; expect a few `unused field` warnings on the compat shims in `loinc.rs` (chapter_number, block_code, etc.) — intentional.
-  2. **Desktop Part 2 — React UI swap.** Mirror iOS Part 2: Settings "Data" section labels, About copy with LOINC §10 + UCUM attribution, search placeholder + tips (HbA1c/CBC/BUN, 2160-0/4548-4/6690-2), 6-axis breakdown panel in detail view, status badge (ACTIVE/TRIAL/DEPRECATED), CollectionExporter headers + filename, app icon swap.
-  3. **First release tag** — once Part 2 done + local Mac build verified: push tag `v1.0.0-beta.1`, GH Actions builds Windows artifact (unsigned until cert clears), upload Mac DMG via the standard `snap-release-mac` helper.
+  1. **`pnpm install && pnpm tauri dev`** locally on Mac — first build verification. Confirm search returns LOINC results, status badges render, 6-axis breakdown panel shows on detail view, About section has LOINC + UCUM attribution.
+  2. **PDF export test** — open a collection with a few codes, run Export PDF, verify the PDF header reads "LOINC v2.82" and the footer carries the LOINC §10 attribution paragraph. Eyeball CSV export columns (LOINC / Long Common Name / Note / Status / Class / System).
+  3. **First release tag** — push `v1.0.0-beta.1` to trigger GH Actions Windows build + draft release. Then run the local `snap-release-mac v1.0.0-beta.1` helper to upload the macOS DMG to the same draft. Windows build will be unsigned until cert clears.
 - **Report-back trigger:** first successful Mac/Windows build, first `v*` tag pushed, GH Actions success, any new blocker, any SPEC change
 <!-- snap-series:manager-block:end -->
 
@@ -36,6 +36,37 @@
 - **`.gitignore`**: adapted from ICD — ignores `node_modules`, `dist`,
   `target`, `Cargo.lock`, macOS metadata, and the `LOINC Snap_Win/`
   subfolder (kept out of the repo per ICD's convention).
+
+### Part 2 polish (2026-05-30, commit `13f5ff0`)
+
+Full React UI + app-icon swap. Desktop now visually a LOINC app end-to-end.
+
+- **Search**: empty state reads "Search LOINC" with creatinine/2160-0
+  examples + HbA1c/CBC/BUN abbreviations. Placeholder is "Search lab
+  test or LOINC code…".
+- **Row**: `StatusBadge` component (ACTIVE/TRIAL green, DEPRECATED/
+  DISCOURAGED orange) replaces Billable/Non-billable.
+- **Detail**: classification section rewritten as **6-axis breakdown
+  panel** — Component / Property / Time / System / Scale / Method, each
+  with a hint ("how expressed", "specimen / source", …) and the cryptic
+  LOINC axis tokens unwrapped via inline dictionaries
+  (`MCnc → Mass concentration`, `Pt → Point in time`, `Ser/Plas → Serum
+  or plasma`, etc.). Status badge in hero; UCUM units chip when present;
+  Class chip at the bottom. Copy-full-detail includes all of it.
+- **Settings → Data**: `LOINC Version 2.82 / Released Feb 23, 2026 /
+  Active Codes 97,314 / Source Regenstrief`.
+- **Settings → About**: LOINC §10 + UCUM license attribution
+  paragraphs added (license obligation per SPEC §9).
+- **Export**: CSV columns `LOINC / Long Common Name / Note / Status /
+  Class / System`. PDF subtitle `LOINC v2.82`, per-entry meta uses
+  Status/Class/System, footer carries the LOINC §10 attribution.
+- **App icon swap**: `loinc-snap.png` → all 14 PNG sizes in
+  `src-tauri/icons/`, plus `icon.icns` (Pillow) + `icon.ico` (Pillow),
+  plus `app-icon-rounded.png` + `app-icon-source.png` at the root.
+
+The CollectionItem snapshot doesn't carry STATUS, so collection-row
+rendering skips the badge (detail view shows it). Add to a future schema
+migration if always-on per-row status display is wanted.
 
 ### Stage 1 state (2026-05-30)
 
